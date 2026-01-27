@@ -3,9 +3,12 @@ import ExpandableText from "../../src/components/ExpandableText";
 import userEvent from "@testing-library/user-event";
 
 describe("TermsAndConditions", () => {
+  const longText = "e".repeat(300);
+  const truncatedText = longText.substring(0, 255) + "...";
+
   it("should render full text if text is shorter than 255 chars", () => {
-    const longText = "e".repeat(50);
-    render(<ExpandableText text={longText} />);
+    const shortText = "e".repeat(50);
+    render(<ExpandableText text={shortText} />);
 
     const article = screen.getByRole("article");
     expect(article).toBeInTheDocument();
@@ -13,11 +16,8 @@ describe("TermsAndConditions", () => {
   });
 
   it("should render truncated text if text is longer than 255 chars", () => {
-    const longText = "e".repeat(300);
-
     render(<ExpandableText text={longText} />);
 
-    const truncatedText = longText.substring(0, 255) + "...";
     const article = screen.getByRole("article");
     expect(article).toBeInTheDocument();
     expect(article.textContent).toBe(truncatedText);
@@ -26,8 +26,6 @@ describe("TermsAndConditions", () => {
   });
 
   it("should render full text if user clicks show more", async () => {
-    const longText = "e".repeat(300);
-
     render(<ExpandableText text={longText} />);
 
     const button = screen.getByRole("button");
@@ -36,5 +34,20 @@ describe("TermsAndConditions", () => {
 
     const article = screen.getByRole("article");
     expect(article.textContent).toBe(longText);
+    expect(button).toHaveTextContent(/less/i);
+  });
+
+  it("should collapse if user clicks show less", async () => {
+    render(<ExpandableText text={longText} />);
+    const showMoreButton = screen.getByRole("button", { name: /more/i });
+    const user = userEvent.setup();
+    await user.click(showMoreButton);
+
+    const showLessButton = screen.getByRole("button", { name: /less/i });
+    await user.click(showLessButton);
+
+    const article = screen.getByRole("article");
+    expect(article.textContent).toBe(truncatedText);
+    expect(showMoreButton).toHaveTextContent(/more/i);
   });
 });
